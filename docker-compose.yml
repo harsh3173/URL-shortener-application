@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: urlshortener_postgres
+    environment:
+      POSTGRES_DB: urlshortener
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deployment/docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - urlshortener_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Go Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: urlshortener_backend
+    environment:
+      - PORT=8080
+      - DATABASE_URL=postgres://postgres:password@postgres:5432/urlshortener?sslmode=disable
+      - JWT_SECRET=your-256-bit-secret-key-change-this-in-production
+      - ENVIRONMENT=development
+      - FRONTEND_URL=http://localhost:3000
+      - RATE_LIMIT_REQUESTS=100
+      - RATE_LIMIT_WINDOW=3600
+      - MAX_URL_LENGTH=2048
+      - CUSTOM_DOMAIN_LENGTH=6
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - urlshortener_network
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: urlshortener_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - urlshortener_network
+    restart: unless-stopped
+
+  # Development Frontend (for hot reload)
+  frontend-dev:
+    image: node:18-alpine
+    container_name: urlshortener_frontend_dev
+    working_dir: /app
+    command: npm run dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3001:3000"
+    depends_on:
+      - backend
+    networks:
+      - urlshortener_network
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8080
+    profiles:
+      - dev
+
+  # Redis (Optional - for caching and rate limiting)
+  redis:
+    image: redis:7-alpine
+    container_name: urlshortener_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - urlshortener_network
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    profiles:
+      - cache
+
+  # Adminer (Database Management)
+  adminer:
+    image: adminer:latest
+    container_name: urlshortener_adminer
+    ports:
+      - "8081:8080"
+    depends_on:
+      - postgres
+    networks:
+      - urlshortener_network
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  urlshortener_network:
+    driver: bridge

@@ -5,14 +5,9 @@
 [![React Version](https://img.shields.io/badge/react-18.2-blue)](https://reactjs.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-A modern, production-ready URL shortening service built with Go, React, PostgreSQL, and deployed on Google Cloud Platform. This project demonstrates full-stack development best practices, scalable architecture, and cloud-native deployment.
+A production-ready URL shortening service built with Go, React, PostgreSQL, and deployed on Google Cloud Platform. Demonstrates full-stack development best practices, scalable architecture, and cloud-native deployment.
 
-## 🚀 Live Demo
-
-- **Frontend**: [https://urlshortener-frontend-xxx.run.app](https://urlshortener-frontend-xxx.run.app)
-- **Backend API**: [https://urlshortener-backend-xxx.run.app](https://urlshortener-backend-xxx.run.app)
-
-## 📋 Table of Contents
+## Table of Contents
 
 - [Features](#features)
 - [Architecture](#architecture)
@@ -22,33 +17,27 @@ A modern, production-ready URL shortening service built with Go, React, PostgreS
 - [Testing](#testing)
 - [Deployment](#deployment)
 - [API Documentation](#api-documentation)
-- [Contributing](#contributing)
-- [Resume Highlights](#resume-highlights)
 
-## ✨ Features
+## Features
 
 ### Core Functionality
-- **URL Shortening**: Create short, memorable links from long URLs
-- **Custom Aliases**: User-defined short codes for branded links
-- **Analytics Dashboard**: Comprehensive click tracking and analytics
-- **User Management**: Secure authentication and user accounts
-- **Link Management**: Edit, delete, and organize shortened URLs
-
-### Advanced Features
-- **Real-time Analytics**: Track clicks, devices, browsers, and geographical data
-- **Expiration Dates**: Set automatic link expiration
-- **Bulk Operations**: Create and manage multiple URLs
-- **Rate Limiting**: Prevent abuse with intelligent rate limiting
-- **Responsive Design**: Mobile-first, responsive UI
+- URL shortening with custom aliases
+- Analytics dashboard with click tracking
+- User authentication and management
+- Link management (edit, delete, organize)
+- Real-time analytics (devices, browsers, geographic data)
+- Automatic link expiration
+- Rate limiting and abuse prevention
+- Responsive, mobile-first UI
 
 ### Security & Performance
-- **JWT Authentication**: Secure, stateless authentication
-- **Input Validation**: Comprehensive request validation
-- **HTTPS Only**: Secure communication in production
-- **Database Optimization**: Indexed queries and connection pooling
-- **Caching**: Redis-based caching for improved performance
+- JWT authentication with secure cookies
+- Input validation and sanitization
+- HTTPS enforcement
+- Database optimization with connection pooling
+- Redis-based caching
 
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 graph TB
@@ -93,7 +82,7 @@ graph TB
     end
 ```
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 - **React 18.2** - Modern UI library with hooks
@@ -123,29 +112,27 @@ graph TB
 - **Cloud Build** - CI/CD pipeline
 - **Terraform** - Infrastructure as Code
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
-
-- **Go 1.22+** - [Install Go](https://golang.org/doc/install)
-- **Node.js 18+** - [Install Node.js](https://nodejs.org/)
-- **Docker** - [Install Docker](https://docs.docker.com/get-docker/)
-- **Docker Compose** - [Install Docker Compose](https://docs.docker.com/compose/install/)
+- Go 1.22+
+- Node.js 18+
+- Docker and Docker Compose
 
 ### Quick Start with Docker
 
-1. **Clone the repository**
+1. Clone the repository
    ```bash
    git clone https://github.com/your-username/url-shortener.git
    cd url-shortener
    ```
 
-2. **Start the development environment**
+2. Start the development environment
    ```bash
    make dev
    ```
 
-3. **Access the application**
+3. Access the application
    - Frontend: http://localhost:3001
    - Backend API: http://localhost:8080
    - Database: postgresql://postgres:password@localhost:5432/urlshortener
@@ -153,73 +140,28 @@ graph TB
 ### Manual Setup
 
 #### Backend Setup
-
-1. **Navigate to backend directory**
-   ```bash
-   cd backend
-   ```
-
-2. **Install dependencies**
-   ```bash
-   go mod download
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-4. **Run the server**
-   ```bash
-   go run cmd/main.go
-   ```
+1. Navigate to backend directory: `cd backend`
+2. Install dependencies: `go mod download`
+3. Set up environment variables: `cp .env.example .env`
+4. Run the server: `go run cmd/main.go`
 
 #### Frontend Setup
+1. Navigate to frontend directory: `cd frontend`
+2. Install dependencies: `npm install`
+3. Set up environment variables: `cp .env.example .env`
+4. Start the development server: `npm run dev`
 
-1. **Navigate to frontend directory**
-   ```bash
-   cd frontend
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-4. **Start the development server**
-   ```bash
-   npm run dev
-   ```
-
-## 🔧 Development
+## Development
 
 ### Available Commands
 
 ```bash
-# Start development environment
-make dev
-
-# Build all services
-make build
-
-# Run tests
-make test
-
-# View logs
-make logs
-
-# Stop all services
-make down
-
-# Clean up Docker resources
-make clean
+make dev     # Start development environment
+make build   # Build all services
+make test    # Run tests
+make logs    # View logs
+make down    # Stop all services
+make clean   # Clean up Docker resources
 ```
 
 ### Project Structure
@@ -250,62 +192,35 @@ url-shortener/
 ├── deployment/            # Deployment configurations
 │   ├── docker/           # Docker-related files
 │   └── gcp/              # Google Cloud Platform configs
-├── docs/                  # Documentation
 └── docker-compose.yml     # Multi-container setup
 ```
 
-## 🧪 Testing
+## Testing
 
 ### Backend Tests
-
 ```bash
-# Run all backend tests
-cd backend && go test ./tests/... -v
-
-# Run tests with coverage
-cd backend && go test ./tests/... -v -cover
-
-# Run specific test
-cd backend && go test ./tests/auth_test.go -v
+cd backend && go test ./tests/... -v        # Run all tests
+cd backend && go test ./tests/... -v -cover # Run with coverage
 ```
 
 ### Frontend Tests
-
 ```bash
-# Run all frontend tests
-cd frontend && npm test
-
-# Run tests with coverage
-cd frontend && npm run test:coverage
-
-# Run tests in watch mode
-cd frontend && npm run test:watch
+cd frontend && npm test                     # Run all tests
+cd frontend && npm run test:coverage        # Run with coverage
 ```
 
 ### Integration Tests
-
 ```bash
-# Run full test suite
-make test
-
-# Run backend tests only
-make test-backend
-
-# Run frontend tests only
-make test-frontend
+make test           # Run full test suite
+make test-backend   # Run backend tests only
+make test-frontend  # Run frontend tests only
 ```
 
-## 🚀 Deployment
+## Deployment
 
 ### Local Production Build
-
 ```bash
-# Build and run production containers
-make up
-
-# Access the application
-# Frontend: http://localhost:3000
-# Backend: http://localhost:8080
+make up  # Build and run production containers
 ```
 
 ### Google Cloud Platform Deployment
@@ -316,24 +231,19 @@ make up
 - `terraform` installed
 
 #### Automated Deployment
-
 ```bash
-# Make deployment script executable
 chmod +x deployment/gcp/deploy.sh
-
-# Deploy to GCP
 ./deployment/gcp/deploy.sh -p your-project-id -r us-central1
 ```
 
 #### Manual Deployment
-
-1. **Set up GCP project**
+1. Set up GCP project
    ```bash
    gcloud config set project your-project-id
    gcloud services enable cloudbuild.googleapis.com run.googleapis.com
    ```
 
-2. **Deploy infrastructure**
+2. Deploy infrastructure
    ```bash
    cd deployment/gcp/terraform
    terraform init
@@ -341,12 +251,12 @@ chmod +x deployment/gcp/deploy.sh
    terraform apply -var="project_id=your-project-id"
    ```
 
-3. **Build and deploy containers**
+3. Build and deploy containers
    ```bash
    gcloud builds submit --config=deployment/gcp/cloudbuild.yaml .
    ```
 
-## 📚 API Documentation
+## API Documentation
 
 ### Authentication Endpoints
 
@@ -407,11 +317,9 @@ Response includes:
 - Geographic data
 - Time-based analytics
 
-## 🏆 Resume Highlights
+## Technical Highlights
 
-### Technical Skills Demonstrated
-
-**Backend Development**
+### Backend Development
 - Go programming with modern patterns and best practices
 - RESTful API design and implementation
 - Database design and optimization with PostgreSQL
@@ -419,7 +327,7 @@ Response includes:
 - Middleware development and request handling
 - Comprehensive testing with unit and integration tests
 
-**Frontend Development**
+### Frontend Development
 - React 18 with modern hooks and functional components
 - TypeScript for type-safe development
 - Responsive design with Tailwind CSS
@@ -427,7 +335,7 @@ Response includes:
 - API integration and error handling
 - Component-based architecture
 
-**DevOps & Cloud**
+### DevOps & Cloud
 - Docker containerization and multi-service orchestration
 - Google Cloud Platform deployment (Cloud Run, Cloud SQL)
 - Infrastructure as Code with Terraform
@@ -435,52 +343,23 @@ Response includes:
 - Security best practices (Secret Manager, VPC)
 - Performance optimization and scalability
 
-**Software Engineering**
-- Clean architecture and separation of concerns
-- Comprehensive testing strategy
-- Documentation and code maintainability
-- Version control and collaborative development
-- Performance monitoring and analytics
-
 ### Key Achievements
+- Full-stack development with complete application from database to UI
+- Cloud-native architecture deployed on GCP with auto-scaling capabilities
+- Security-first approach with JWT authentication, input validation, and HTTPS
+- Test-driven development with comprehensive test suite
+- Production-ready with monitoring, logging, and error handling
+- Scalable design with horizontal scaling and caching
+- Modern tech stack with latest versions of Go, React, and cloud services
 
-✅ **Full-Stack Development**: Built complete application from database to UI
-✅ **Cloud-Native Architecture**: Deployed on GCP with auto-scaling capabilities
-✅ **Security First**: Implemented JWT authentication, input validation, and HTTPS
-✅ **Test-Driven Development**: Comprehensive test suite with 80%+ coverage
-✅ **Production Ready**: Includes monitoring, logging, and error handling
-✅ **Scalable Design**: Horizontal scaling with load balancing and caching
-✅ **Modern Tech Stack**: Latest versions of Go, React, and cloud services
-
-### Bullet Points for Resume
-
-- **Developed a production-ready URL shortening service** using Go, React, PostgreSQL, and GCP, handling 10,000+ requests with 99.9% uptime
-- **Implemented secure JWT authentication system** with bcrypt password hashing and httpOnly cookies, protecting user data and preventing unauthorized access
-- **Built comprehensive analytics dashboard** with real-time click tracking, device detection, and geographic data visualization using React and Recharts
-- **Deployed scalable cloud architecture** on Google Cloud Platform using Cloud Run, Cloud SQL, and Terraform, achieving automatic scaling and zero-downtime deployments
-- **Established CI/CD pipeline** with Docker, Cloud Build, and automated testing, reducing deployment time by 80% and ensuring code quality
-- **Designed RESTful API** with proper error handling, input validation, and rate limiting, serving JSON responses with consistent structure
-- **Implemented responsive frontend** using React 18, TypeScript, and Tailwind CSS, providing optimal user experience across all devices
-- **Achieved 90%+ test coverage** with unit tests, integration tests, and end-to-end testing using Go testify and React Testing Library
-
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
-## 📞 Contact
-
-- **Email**: your.email@example.com
-- **LinkedIn**: [Your LinkedIn Profile](https://linkedin.com/in/your-profile)
-- **GitHub**: [Your GitHub Profile](https://github.com/your-username)
-
----
-
-**Built with ❤️ by [Your Name]** - A demonstration of modern full-stack development skills for technical interviews and portfolio showcasing.

@@ -3,9 +3,10 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 4.0"
+      version = "~> 6.0"
     }
   }
+  required_version = ">= 1.6"
 }
 
 # Configure the Google Cloud Provider
@@ -209,8 +210,12 @@ resource "google_cloud_run_service" "backend" {
 
         resources {
           limits = {
-            memory = "1Gi"
+            memory = "512Mi"
             cpu    = "1000m"
+          }
+          requests = {
+            memory = "256Mi"
+            cpu    = "500m"
           }
         }
       }
@@ -220,7 +225,9 @@ resource "google_cloud_run_service" "backend" {
     
     metadata {
       annotations = {
-        "autoscaling.knative.dev/maxScale"      = "10"
+        "autoscaling.knative.dev/maxScale"      = "3"
+        "autoscaling.knative.dev/minScale"      = "0"
+        "run.googleapis.com/cpu-throttling"     = "true"
         "run.googleapis.com/vpc-access-connector" = google_vpc_access_connector.connector.id
       }
     }
@@ -254,8 +261,12 @@ resource "google_cloud_run_service" "frontend" {
 
         resources {
           limits = {
-            memory = "512Mi"
+            memory = "256Mi"
             cpu    = "500m"
+          }
+          requests = {
+            memory = "128Mi"
+            cpu    = "250m"
           }
         }
       }
@@ -265,7 +276,9 @@ resource "google_cloud_run_service" "frontend" {
     
     metadata {
       annotations = {
-        "autoscaling.knative.dev/maxScale" = "5"
+        "autoscaling.knative.dev/maxScale" = "2"
+        "autoscaling.knative.dev/minScale" = "0"
+        "run.googleapis.com/cpu-throttling" = "true"
       }
     }
   }

@@ -33,8 +33,20 @@ variable "database_password" {
   sensitive   = true
 }
 
-variable "jwt_secret" {
-  description = "JWT secret for authentication"
+variable "session_secret" {
+  description = "Session secret for authentication"
+  type        = string
+  sensitive   = true
+}
+
+variable "google_client_id" {
+  description = "Google OAuth Client ID"
+  type        = string
+  sensitive   = true
+}
+
+variable "google_client_secret" {
+  description = "Google OAuth Client Secret"
   type        = string
   sensitive   = true
 }
@@ -149,9 +161,9 @@ resource "google_secret_manager_secret_version" "database_url" {
   secret_data = "postgres://${google_sql_user.user.name}:${var.database_password}@${google_sql_database_instance.postgres.private_ip_address}:5432/${google_sql_database.database.name}?sslmode=require"
 }
 
-# Store JWT secret in Secret Manager
-resource "google_secret_manager_secret" "jwt_secret" {
-  secret_id = "JWT_SECRET"
+# Store session secret in Secret Manager
+resource "google_secret_manager_secret" "session_secret" {
+  secret_id = "SESSION_SECRET"
   
   replication {
     automatic = true
@@ -160,9 +172,40 @@ resource "google_secret_manager_secret" "jwt_secret" {
   depends_on = [google_project_service.apis]
 }
 
-resource "google_secret_manager_secret_version" "jwt_secret" {
-  secret = google_secret_manager_secret.jwt_secret.id
-  secret_data = var.jwt_secret
+resource "google_secret_manager_secret_version" "session_secret" {
+  secret = google_secret_manager_secret.session_secret.id
+  secret_data = var.session_secret
+}
+
+# Store Google OAuth credentials in Secret Manager
+resource "google_secret_manager_secret" "google_client_id" {
+  secret_id = "GOOGLE_CLIENT_ID"
+  
+  replication {
+    automatic = true
+  }
+  
+  depends_on = [google_project_service.apis]
+}
+
+resource "google_secret_manager_secret_version" "google_client_id" {
+  secret = google_secret_manager_secret.google_client_id.id
+  secret_data = var.google_client_id
+}
+
+resource "google_secret_manager_secret" "google_client_secret" {
+  secret_id = "GOOGLE_CLIENT_SECRET"
+  
+  replication {
+    automatic = true
+  }
+  
+  depends_on = [google_project_service.apis]
+}
+
+resource "google_secret_manager_secret_version" "google_client_secret" {
+  secret = google_secret_manager_secret.google_client_secret.id
+  secret_data = var.google_client_secret
 }
 
 # Create Cloud Run service for backend
@@ -199,10 +242,30 @@ resource "google_cloud_run_service" "backend" {
         }
         
         env {
-          name = "JWT_SECRET"
+          name = "SESSION_SECRET"
           value_from {
             secret_key_ref {
-              name = google_secret_manager_secret.jwt_secret.secret_id
+              name = google_secret_manager_secret.session_secret.secret_id
+              key  = "latest"
+            }
+          }
+        }
+        
+        env {
+          name = "GOOGLE_CLIENT_ID"
+          value_from {
+            secret_key_ref {
+              name = google_secret_manager_secret.google_client_id.secret_id
+              key  = "latest"
+            }
+          }
+        }
+        
+        env {
+          name = "GOOGLE_CLIENT_SECRET"
+          value_from {
+            secret_key_ref {
+              name = google_secret_manager_secret.google_client_secret.secret_id
               key  = "latest"
             }
           }
@@ -242,7 +305,9 @@ resource "google_cloud_run_service" "backend" {
     google_project_service.apis,
     google_sql_database_instance.postgres,
     google_secret_manager_secret_version.database_url,
-    google_secret_manager_secret_version.jwt_secret
+    google_secret_manager_secret_version.session_secret,
+    google_secret_manager_secret_version.google_client_id,
+    google_secret_manager_secret_version.google_client_secret
   ]
 }
 
@@ -256,7 +321,7 @@ resource "google_cloud_run_service" "frontend" {
       containers {
         image = "gcr.io/${var.project_id}/urlshortener-frontend:latest"
         ports {
-          container_port = 80
+          container_port = 8080
         }
 
         resources {

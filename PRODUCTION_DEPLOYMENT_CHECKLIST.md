@@ -55,11 +55,15 @@ gcloud services enable \
 ```bash
 # Generate secure secrets
 export DB_PASSWORD=$(openssl rand -base64 32)
-export JWT_SECRET=$(openssl rand -base64 32)
+export SESSION_SECRET=$(openssl rand -base64 32)
+export GOOGLE_CLIENT_ID="your-google-oauth-client-id"
+export GOOGLE_CLIENT_SECRET="your-google-oauth-client-secret"
 
 # Store in Secret Manager
 echo -n "$DB_PASSWORD" | gcloud secrets create DATABASE_PASSWORD --data-file=-
-echo -n "$JWT_SECRET" | gcloud secrets create JWT_SECRET --data-file=-
+echo -n "$SESSION_SECRET" | gcloud secrets create SESSION_SECRET --data-file=-
+echo -n "$GOOGLE_CLIENT_ID" | gcloud secrets create GOOGLE_CLIENT_ID --data-file=-
+echo -n "$GOOGLE_CLIENT_SECRET" | gcloud secrets create GOOGLE_CLIENT_SECRET --data-file=-
 ```
 
 ### Step 3: Deploy Infrastructure
@@ -71,7 +75,9 @@ cat > terraform.tfvars <<EOF
 project_id = "$PROJECT_ID"
 region = "us-central1"
 database_password = "$DB_PASSWORD"
-jwt_secret = "$JWT_SECRET"
+session_secret = "$SESSION_SECRET"
+google_client_id = "$GOOGLE_CLIENT_ID"
+google_client_secret = "$GOOGLE_CLIENT_SECRET"
 EOF
 
 # Deploy
@@ -143,11 +149,13 @@ curl -X POST $BACKEND_URL/api/v1/urls \
 - ✅ IAM roles with least privilege
 
 ### Application Security
-- ✅ JWT authentication
+- ✅ OAuth 2.0 authentication with Google
+- ✅ Session-based authentication with secure HTTP-only cookies
+- ✅ CSRF protection via state tokens
 - ✅ Input validation
 - ✅ Rate limiting
 - ✅ CORS configuration
-- ✅ Password hashing (bcrypt)
+- ✅ Password hashing (bcrypt) for legacy users
 
 ## Monitoring & Observability
 
@@ -175,7 +183,9 @@ terraform destroy -auto-approve
 
 # Delete secrets
 gcloud secrets delete DATABASE_PASSWORD
-gcloud secrets delete JWT_SECRET
+gcloud secrets delete SESSION_SECRET
+gcloud secrets delete GOOGLE_CLIENT_ID
+gcloud secrets delete GOOGLE_CLIENT_SECRET
 ```
 
 ## Troubleshooting

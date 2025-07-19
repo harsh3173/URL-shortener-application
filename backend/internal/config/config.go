@@ -9,16 +9,18 @@ import (
 )
 
 type Config struct {
-	Port               string
-	DatabaseURL        string
-	JWTSecret          string
-	Environment        string
-	FrontendURL        string
-	RedisURL           string
-	RateLimitRequests  int
-	RateLimitWindow    int
-	MaxURLLength       int
-	CustomDomainLength int
+	Port                string
+	DatabaseURL         string
+	GoogleClientID      string
+	GoogleClientSecret  string
+	SessionSecret       string
+	Environment         string
+	FrontendURL         string
+	RedisURL            string
+	RateLimitRequests   int
+	RateLimitWindow     int
+	MaxURLLength        int
+	CustomDomainLength  int
 }
 
 func LoadConfig() *Config {
@@ -32,16 +34,18 @@ func LoadConfig() *Config {
 	customDomainLength, _ := strconv.Atoi(getEnv("CUSTOM_DOMAIN_LENGTH", "6"))
 
 	return &Config{
-		Port:               getEnv("PORT", "8080"),
-		DatabaseURL:        getEnv("DATABASE_URL", "postgres://user:password@localhost/urlshortener?sslmode=disable"),
-		JWTSecret:          getEnv("JWT_SECRET", "your-256-bit-secret"),
-		Environment:        getEnv("ENVIRONMENT", "development"),
-		FrontendURL:        getEnv("FRONTEND_URL", "http://localhost:3000"),
-		RedisURL:           getEnv("REDIS_URL", "redis://localhost:6379"),
-		RateLimitRequests:  rateLimitRequests,
-		RateLimitWindow:    rateLimitWindow,
-		MaxURLLength:       maxURLLength,
-		CustomDomainLength: customDomainLength,
+		Port:                getEnv("PORT", "8080"),
+		DatabaseURL:         getEnv("DATABASE_URL", "postgres://user:password@localhost/urlshortener?sslmode=disable"),
+		GoogleClientID:      getEnv("GOOGLE_CLIENT_ID", ""),
+		GoogleClientSecret:  getEnv("GOOGLE_CLIENT_SECRET", ""),
+		SessionSecret:       getEnv("SESSION_SECRET", "your-256-bit-session-secret"),
+		Environment:         getEnv("ENVIRONMENT", "development"),
+		FrontendURL:         getEnv("FRONTEND_URL", "http://localhost:3000"),
+		RedisURL:            getEnv("REDIS_URL", "redis://localhost:6379"),
+		RateLimitRequests:   rateLimitRequests,
+		RateLimitWindow:     rateLimitWindow,
+		MaxURLLength:        maxURLLength,
+		CustomDomainLength:  customDomainLength,
 	}
 }
 

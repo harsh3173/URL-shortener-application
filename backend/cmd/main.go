@@ -25,7 +25,8 @@ func main() {
 	authService := services.NewAuthService()
 	urlService := services.NewURLService()
 	
-	authHandler := handlers.NewAuthHandler(authService, cfg)
+	sessionStore := middleware.NewSimpleSessionStore(cfg)
+	oauthHandler := handlers.NewOAuthHandler(authService, cfg, sessionStore)
 	urlHandler := handlers.NewURLHandler(urlService)
 	
 	app := fiber.New(fiber.Config{
@@ -57,18 +58,17 @@ func main() {
 	apiV1 := app.Group("/api/v1")
 	
 	auth := apiV1.Group("/auth")
-	auth.Post("/register", authHandler.Register)
-	auth.Post("/login", authHandler.Login)
-	auth.Post("/logout", authHandler.Logout)
-	auth.Get("/profile", middleware.AuthMiddleware(cfg), authHandler.GetProfile)
-	auth.Post("/refresh", middleware.AuthMiddleware(cfg), authHandler.RefreshToken)
+	auth.Get("/login", oauthHandler.Login)
+	auth.Get("/callback", oauthHandler.Callback)
+	auth.Post("/logout", oauthHandler.Logout)
+	auth.Get("/profile", sessionStore.AuthMiddleware(), oauthHandler.GetProfile)
 	
 	urls := apiV1.Group("/urls")
-	urls.Post("/", middleware.OptionalAuthMiddleware(cfg), urlHandler.CreateURL)
-	urls.Get("/", middleware.AuthMiddleware(cfg), urlHandler.GetUserURLs)
-	urls.Put("/:id", middleware.AuthMiddleware(cfg), urlHandler.UpdateURL)
-	urls.Delete("/:id", middleware.AuthMiddleware(cfg), urlHandler.DeleteURL)
-	urls.Get("/:id/analytics", middleware.AuthMiddleware(cfg), urlHandler.GetURLAnalytics)
+	urls.Post("/", sessionStore.OptionalAuthMiddleware(), urlHandler.CreateURL)
+	urls.Get("/", sessionStore.AuthMiddleware(), urlHandler.GetUserURLs)
+	urls.Put("/:id", sessionStore.AuthMiddleware(), urlHandler.UpdateURL)
+	urls.Delete("/:id", sessionStore.AuthMiddleware(), urlHandler.DeleteURL)
+	urls.Get("/:id/analytics", sessionStore.AuthMiddleware(), urlHandler.GetURLAnalytics)
 	urls.Get("/:shortCode/info", urlHandler.GetURLInfo)
 	
 	app.Get("/:shortCode", urlHandler.RedirectURL)

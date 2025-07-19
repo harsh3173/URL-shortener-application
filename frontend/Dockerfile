@@ -35,15 +35,19 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Fix permissions
+# Fix permissions and create directories
 RUN chown -R 1001:1001 /usr/share/nginx/html && \
     chown -R 1001:1001 /var/cache/nginx && \
     chown -R 1001:1001 /var/log/nginx && \
-    chown -R 1001:1001 /etc/nginx/conf.d
+    chown -R 1001:1001 /etc/nginx/conf.d && \
+    chown -R 1001:1001 /tmp && \
+    mkdir -p /var/run && \
+    chown -R 1001:1001 /var/run && \
+    mkdir -p /tmp/nginx && \
+    chown -R 1001:1001 /tmp/nginx
 
 # Change default nginx port to 8080 (non-privileged)
 RUN sed -i.bak 's/listen\s*80;/listen 8080;/' /etc/nginx/conf.d/default.conf
-RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 
 # Expose port
 EXPOSE 8080

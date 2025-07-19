@@ -1,15 +1,14 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, LoginRequest, RegisterRequest } from '@/types';
+import { User } from '@/types';
 import { authApi } from '@/services/api';
 import toast from 'react-hot-toast';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (data: LoginRequest) => Promise<void>;
-  register: (data: RegisterRequest) => Promise<void>;
+  startOAuthLogin: () => Promise<void>;
   logout: () => Promise<void>;
-  refreshToken: () => Promise<void>;
+  checkAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,48 +28,38 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      getProfile();
-    } else {
-      setLoading(false);
+    if (!authChecked) {
+      checkAuth();
     }
-  }, []);
+  }, [authChecked]);
 
-  const getProfile = async () => {
+  const checkAuth = async () => {
+    if (authChecked) return;
+    
     try {
       const response = await authApi.getProfile();
       setUser(response.data!);
     } catch (error) {
+      // User not authenticated, clear any stored data
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
     } finally {
       setLoading(false);
+      setAuthChecked(true);
     }
   };
 
-  const login = async (data: LoginRequest) => {
+  const startOAuthLogin = async () => {
     try {
-      const response = await authApi.login(data);
-      localStorage.setItem('token', response.data.token);
-      setUser(response.data.user);
-      toast.success('Login successful!');
+      const response = await authApi.getOAuthLoginUrl();
+      // Redirect to Google OAuth
+      window.location.href = response.data!.auth_url;
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Login failed';
-      toast.error(message);
-      throw error;
-    }
-  };
-
-  const register = async (data: RegisterRequest) => {
-    try {
-      const response = await authApi.register(data);
-      localStorage.setItem('token', response.data.token);
-      setUser(response.data.user);
-      toast.success('Registration successful!');
-    } catch (error: any) {
-      const message = error.response?.data?.message || 'Registration failed';
+      const message = error.response?.data?.message || 'Failed to start OAuth login';
       toast.error(message);
       throw error;
     }
@@ -80,33 +69,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await authApi.logout();
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       setUser(null);
       toast.success('Logged out successfully');
     } catch (error) {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       setUser(null);
       toast.error('Logout failed');
-    }
-  };
-
-  const refreshToken = async () => {
-    try {
-      const response = await authApi.refreshToken();
-      localStorage.setItem('token', response.data!.token);
-    } catch (error) {
-      localStorage.removeItem('token');
-      setUser(null);
-      throw error;
     }
   };
 
   const value = {
     user,
     loading,
-    login,
-    register,
+    startOAuthLogin,
     logout,
-    refreshToken,
+    checkAuth,
   };
 
   return (

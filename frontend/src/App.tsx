@@ -5,7 +5,7 @@ import Layout from '@/components/Layout';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
-import RegisterPage from '@/pages/RegisterPage';
+import OAuthCallbackPage from '@/pages/OAuthCallbackPage';
 import DashboardPage from '@/pages/DashboardPage';
 import AnalyticsPage from '@/pages/AnalyticsPage';
 import NotFoundPage from '@/pages/NotFoundPage';
@@ -49,11 +49,8 @@ function App() {
               <LoginPage />
             </PublicRoute>
           } />
-          <Route path="register" element={
-            <PublicRoute>
-              <RegisterPage />
-            </PublicRoute>
-          } />
+          <Route path="register" element={<Navigate to="/login" replace />} />
+          <Route path="auth/callback" element={<OAuthCallbackPage />} />
           <Route path="dashboard" element={
             <ProtectedRoute>
               <DashboardPage />

@@ -57,15 +57,9 @@ const Header: React.FC = () => {
               <div className="flex items-center space-x-4">
                 <Link
                   to="/login"
-                  className="text-gray-700 hover:text-primary-600 transition-colors"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
                   className="btn btn-primary btn-sm"
                 >
-                  Sign Up
+                  Sign in with Google
                 </Link>
               </div>
             )}

@@ -21,40 +21,33 @@ const api = axios.create({
   },
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
+// OAuth uses session-based authentication, no need for token interceptors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // Clear any stored auth data, but don't redirect automatically
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      localStorage.removeItem('user');
     }
     return Promise.reject(error);
   }
 );
 
 export const authApi = {
-  register: (data: RegisterRequest): Promise<AuthResponse> =>
-    api.post('/auth/register', data).then(res => res.data),
+  // Get Google OAuth login URL
+  getOAuthLoginUrl: (): Promise<ApiResponse<{ auth_url: string }>> =>
+    api.get('/auth/login').then(res => res.data),
   
-  login: (data: LoginRequest): Promise<AuthResponse> =>
-    api.post('/auth/login', data).then(res => res.data),
+  // Handle OAuth callback (called automatically by backend)
+  handleOAuthCallback: (code: string, state: string): Promise<ApiResponse<User>> =>
+    api.get(`/auth/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`).then(res => res.data),
   
   logout: (): Promise<ApiResponse> =>
     api.post('/auth/logout').then(res => res.data),
   
   getProfile: (): Promise<ApiResponse<User>> =>
     api.get('/auth/profile').then(res => res.data),
-  
-  refreshToken: (): Promise<ApiResponse<{ token: string }>> =>
-    api.post('/auth/refresh').then(res => res.data),
 };
 
 export const urlApi = {

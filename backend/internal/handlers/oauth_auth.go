@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"regexp"
 	"time"
 	"url-shortener-backend/internal/config"
 	"url-shortener-backend/internal/middleware"
@@ -69,10 +70,27 @@ func (h *OAuthHandler) Callback(c *fiber.Ctx) error {
 	code := c.Query("code")
 	state := c.Query("state")
 
+	// Enhanced input validation
 	if code == "" || state == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{
 			Error:   "invalid_callback",
 			Message: "Missing code or state parameter",
+		})
+	}
+	
+	// Validate parameter lengths and format
+	if len(code) > 1024 || len(state) > 1024 {
+		return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{
+			Error:   "invalid_callback",
+			Message: "Invalid parameter length",
+		})
+	}
+	
+	// Basic format validation (alphanumeric, dash, underscore)
+	if !isValidOAuthParam(code) || !isValidOAuthParam(state) {
+		return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{
+			Error:   "invalid_callback",
+			Message: "Invalid parameter format",
 		})
 	}
 
@@ -124,7 +142,13 @@ func (h *OAuthHandler) Callback(c *fiber.Ctx) error {
 	}
 
 	// Create session
-	h.sessionStore.CreateSession(c, user.ID, user.Email)
+	_, err = h.sessionStore.CreateSession(c, user.ID, user.Email)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
+			Error:   "session_creation_failed",
+			Message: "Failed to create session",
+		})
+	}
 
 	return c.JSON(models.SuccessResponse{
 		Success: true,
@@ -162,4 +186,11 @@ func (h *OAuthHandler) GetProfile(c *fiber.Ctx) error {
 		Success: true,
 		Data:    user,
 	})
+}
+
+// isValidOAuthParam validates OAuth parameter format for security
+func isValidOAuthParam(param string) bool {
+	// Allow alphanumeric, dash, underscore, dot, forward slash (URL-safe characters)
+	matched, _ := regexp.MatchString(`^[a-zA-Z0-9\-_./]+$`, param)
+	return matched
 }

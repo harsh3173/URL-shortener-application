@@ -9,7 +9,6 @@ import (
 type User struct {
 	ID        uint           `json:"id" gorm:"primaryKey"`
 	Email     string         `json:"email" gorm:"unique;not null"`
-	Password  string         `json:"-" gorm:""`
 	Name      string         `json:"name" gorm:"not null"`
 	Picture   string         `json:"picture,omitempty" gorm:"size:500"`
 	CreatedAt time.Time      `json:"created_at"`
@@ -67,16 +66,6 @@ type CreateURLRequest struct {
 	ExpiresAt   string `json:"expires_at,omitempty"`
 }
 
-type LoginRequest struct {
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=6"`
-}
-
-type RegisterRequest struct {
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=6"`
-	Name     string `json:"name" validate:"required,min=2,max=100"`
-}
 
 type ErrorResponse struct {
 	Error   string `json:"error"`

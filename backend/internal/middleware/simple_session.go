@@ -3,6 +3,7 @@ package middleware
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"sync"
 	"time"
 	"url-shortener-backend/internal/config"
@@ -18,47 +19,72 @@ type SessionData struct {
 }
 
 type SimpleSessionStore struct {
-	sessions map[string]*SessionData
+	Sessions map[string]*SessionData // Made public for testing
 	mu       sync.RWMutex
 	config   *config.Config
+	done     chan struct{} // For graceful shutdown
 }
 
 func NewSimpleSessionStore(config *config.Config) *SimpleSessionStore {
 	store := &SimpleSessionStore{
-		sessions: make(map[string]*SessionData),
+		Sessions: make(map[string]*SessionData),
 		config:   config,
+		done:     make(chan struct{}),
 	}
 	
-	// Start cleanup routine
+	// Start cleanup routine with graceful shutdown
 	go store.cleanup()
 	
 	return store
 }
 
 func (s *SimpleSessionStore) cleanup() {
+	ticker := time.NewTicker(1 * time.Hour)
+	defer ticker.Stop()
+	
 	for {
-		time.Sleep(1 * time.Hour)
-		s.mu.Lock()
-		for sessionID, data := range s.sessions {
-			if time.Since(data.CreatedAt) > 24*time.Hour {
-				delete(s.sessions, sessionID)
+		select {
+		case <-ticker.C:
+			s.mu.Lock()
+			expired := 0
+			for sessionID, data := range s.Sessions {
+				if time.Since(data.CreatedAt) > 24*time.Hour {
+					delete(s.Sessions, sessionID)
+					expired++
+				}
 			}
+			s.mu.Unlock()
+			// Log cleanup activity for monitoring
+			if expired > 0 {
+				fmt.Printf("Session cleanup: removed %d expired sessions\n", expired)
+			}
+		case <-s.done:
+			return // Graceful shutdown
 		}
-		s.mu.Unlock()
 	}
 }
 
-func (s *SimpleSessionStore) generateSessionID() string {
-	b := make([]byte, 32)
-	rand.Read(b)
-	return base64.URLEncoding.EncodeToString(b)
+// Close gracefully shuts down the session store
+func (s *SimpleSessionStore) Close() {
+	close(s.done)
 }
 
-func (s *SimpleSessionStore) CreateSession(c *fiber.Ctx, userID uint, userEmail string) string {
-	sessionID := s.generateSessionID()
+func (s *SimpleSessionStore) generateSessionID() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", fmt.Errorf("failed to generate secure session ID: %w", err)
+	}
+	return base64.URLEncoding.EncodeToString(b), nil
+}
+
+func (s *SimpleSessionStore) CreateSession(c *fiber.Ctx, userID uint, userEmail string) (string, error) {
+	sessionID, err := s.generateSessionID()
+	if err != nil {
+		return "", fmt.Errorf("failed to create session: %w", err)
+	}
 	
 	s.mu.Lock()
-	s.sessions[sessionID] = &SessionData{
+	s.Sessions[sessionID] = &SessionData{
 		UserID:    userID,
 		UserEmail: userEmail,
 		CreatedAt: time.Now(),
@@ -74,26 +100,26 @@ func (s *SimpleSessionStore) CreateSession(c *fiber.Ctx, userID uint, userEmail 
 		SameSite: "Lax",
 	})
 	
-	return sessionID
+	return sessionID, nil
 }
 
 func (s *SimpleSessionStore) GetSession(sessionID string) *SessionData {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.mu.Lock() // Use write lock to allow safe deletion
+	defer s.mu.Unlock()
 	
-	if data, exists := s.sessions[sessionID]; exists {
+	if data, exists := s.Sessions[sessionID]; exists {
 		if time.Since(data.CreatedAt) < 24*time.Hour {
 			return data
 		}
-		// Session expired, delete it
-		delete(s.sessions, sessionID)
+		// Session expired, delete it safely
+		delete(s.Sessions, sessionID)
 	}
 	return nil
 }
 
 func (s *SimpleSessionStore) DestroySession(c *fiber.Ctx, sessionID string) {
 	s.mu.Lock()
-	delete(s.sessions, sessionID)
+	delete(s.Sessions, sessionID)
 	s.mu.Unlock()
 	
 	c.Cookie(&fiber.Cookie{

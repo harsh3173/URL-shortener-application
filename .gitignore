@@ -194,3 +194,6 @@ htmlcov/
 .DS_Store
 *.sublime-*
 *.code-workspace
+CRITICAL_SECURITY_AUDIT.md
+FINAL_SECURITY_AUDIT_REPORT.md
+PRODUCTION_AUDIT_REPORT.md

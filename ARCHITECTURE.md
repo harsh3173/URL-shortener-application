@@ -22,7 +22,7 @@ The URL Shortener is a modern, cloud-native application built with a microservic
 - Caching layer for performance
 
 ### 3. Security
-- JWT-based authentication
+- OAuth 2.0 authentication with Google
 - Input validation and sanitization
 - HTTPS enforcement
 - Rate limiting and abuse prevention
@@ -76,8 +76,8 @@ internal/
 - **Go 1.22**: High-performance, statically typed language
 - **Fiber**: Express-inspired web framework
 - **GORM**: Object-Relational Mapping for Go
-- **JWT**: JSON Web Token authentication
-- **bcrypt**: Password hashing
+- **OAuth 2.0**: Google OAuth authentication
+- **Sessions**: HTTP-only cookie sessions
 - **PostgreSQL**: Relational database
 
 ### Database Schema
@@ -88,7 +88,7 @@ CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password TEXT NOT NULL,
+    picture VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -130,7 +130,7 @@ CREATE TABLE analytics (
 
 1. **User Input**: User submits URL through frontend form
 2. **Validation**: Frontend validates input before sending to backend
-3. **Authentication**: Backend verifies JWT token (if user is logged in)
+3. **Authentication**: Backend verifies session (if user is logged in)
 4. **Processing**: Backend generates short code and validates URL
 5. **Storage**: URL data is stored in PostgreSQL database
 6. **Response**: Short URL is returned to frontend
@@ -157,11 +157,12 @@ CREATE TABLE analytics (
 
 ### Authentication Flow
 
-1. **Registration/Login**: User credentials are validated
-2. **Password Hashing**: bcrypt hashing with salt
-3. **JWT Generation**: Signed JWT token is created
-4. **Token Storage**: HttpOnly cookies for security
-5. **Token Validation**: Middleware validates tokens on protected routes
+1. **OAuth Login**: User initiates OAuth flow with Google
+2. **Authorization**: User authorizes application access
+3. **Callback**: Google redirects with authorization code
+4. **Token Exchange**: Backend exchanges code for user info
+5. **Session Creation**: Secure HTTP-only session cookie is created
+6. **Session Validation**: Middleware validates sessions on protected routes
 
 ### Security Measures
 
@@ -290,7 +291,7 @@ Google Cloud Platform:
 
 - **API Testing**: End-to-end API workflows
 - **Database Testing**: CRUD operations validation
-- **Authentication Testing**: JWT token validation
+- **Authentication Testing**: OAuth session validation
 - **Error Handling**: Error scenarios and recovery
 
 ### End-to-End Testing

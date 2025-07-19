@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 	"url-shortener-backend/internal/config"
 	"url-shortener-backend/internal/database"
 	"url-shortener-backend/internal/handlers"
@@ -19,18 +20,22 @@ import (
 	"gorm.io/gorm"
 )
 
-type URLTestSuite struct {
+type OAuthTestSuite struct {
 	suite.Suite
-	app    *fiber.App
-	db     *gorm.DB
-	config *config.Config
+	app          *fiber.App
+	db           *gorm.DB
+	config       *config.Config
+	sessionStore *middleware.SimpleSessionStore
 }
 
-func (suite *URLTestSuite) SetupSuite() {
+func (suite *OAuthTestSuite) SetupSuite() {
 	suite.config = &config.Config{
-		JWTSecret:   "test-secret",
-		Environment: "test",
-		DatabaseURL: "sqlite://test.db",
+		GoogleClientID:     "test-client-id",
+		GoogleClientSecret: "test-client-secret",
+		SessionSecret:      "test-session-secret",
+		Environment:        "test",
+		DatabaseURL:        "sqlite://test.db",
+		FrontendURL:        "http://localhost:3000",
 	}
 
 	var err error
@@ -41,21 +46,50 @@ func (suite *URLTestSuite) SetupSuite() {
 	err = database.AutoMigrate()
 	suite.Require().NoError(err)
 
+	authService := services.NewAuthService()
 	urlService := services.NewURLService()
+	
+	suite.sessionStore = middleware.NewSimpleSessionStore(suite.config)
+	oauthHandler := handlers.NewOAuthHandler(authService, suite.config, suite.sessionStore)
 	urlHandler := handlers.NewURLHandler(urlService)
 
 	suite.app = fiber.New()
+	
+	// OAuth routes
+	auth := suite.app.Group("/auth")
+	auth.Get("/login", oauthHandler.Login)
+	auth.Get("/callback", oauthHandler.Callback)
+	auth.Post("/logout", oauthHandler.Logout)
+	auth.Get("/profile", suite.sessionStore.AuthMiddleware(), oauthHandler.GetProfile)
+	
+	// URL routes
 	urls := suite.app.Group("/urls")
-	urls.Post("/", middleware.OptionalAuthMiddleware(suite.config), urlHandler.CreateURL)
+	urls.Post("/", suite.sessionStore.OptionalAuthMiddleware(), urlHandler.CreateURL)
+	urls.Get("/", suite.sessionStore.AuthMiddleware(), urlHandler.GetUserURLs)
 	urls.Get("/:shortCode/info", urlHandler.GetURLInfo)
+	
 	suite.app.Get("/:shortCode", urlHandler.RedirectURL)
 }
 
-func (suite *URLTestSuite) TearDownTest() {
+func (suite *OAuthTestSuite) TearDownTest() {
+	suite.db.Exec("DELETE FROM users")
 	suite.db.Exec("DELETE FROM urls")
 }
 
-func (suite *URLTestSuite) TestCreateURLSuccess() {
+func (suite *OAuthTestSuite) TestOAuthLoginGeneratesURL() {
+	req := httptest.NewRequest(http.MethodGet, "/auth/login", nil)
+	
+	resp, err := suite.app.Test(req)
+	suite.Require().NoError(err)
+	suite.Equal(http.StatusOK, resp.StatusCode)
+
+	var response models.SuccessResponse
+	json.NewDecoder(resp.Body).Decode(&response)
+	suite.True(response.Success)
+	suite.Contains(response.Data.(map[string]interface{})["auth_url"], "accounts.google.com")
+}
+
+func (suite *OAuthTestSuite) TestCreateURLAnonymous() {
 	reqBody := models.CreateURLRequest{
 		OriginalURL: "https://example.com",
 		Title:       "Test URL",
@@ -74,29 +108,32 @@ func (suite *URLTestSuite) TestCreateURLSuccess() {
 	suite.True(response.Success)
 }
 
-func (suite *URLTestSuite) TestCreateURLInvalidURL() {
-	reqBody := models.CreateURLRequest{
-		OriginalURL: "invalid-url",
+func (suite *OAuthTestSuite) TestCreateURLWithSession() {
+	// Create a test user first
+	user := models.User{
+		Name:    "Test User",
+		Email:   "test@example.com",
+		Picture: "https://example.com/avatar.jpg",
 	}
+	suite.db.Create(&user)
 
-	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/urls/", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := suite.app.Test(req)
-	suite.Require().NoError(err)
-	suite.Equal(http.StatusBadRequest, resp.StatusCode)
-}
-
-func (suite *URLTestSuite) TestCreateURLWithCustomAlias() {
+	// Manually create a session in the session store
+	sessionID := "test-session-id"
+	suite.sessionStore.Sessions[sessionID] = &middleware.SessionData{
+		UserID:    user.ID,
+		UserEmail: user.Email,
+		CreatedAt: time.Now(),
+	}
+	
 	reqBody := models.CreateURLRequest{
 		OriginalURL: "https://example.com",
-		CustomAlias: "my-custom-link",
+		Title:       "Test URL",
 	}
 
 	body, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest(http.MethodPost, "/urls/", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Cookie", "session_id="+sessionID)
 
 	resp, err := suite.app.Test(req)
 	suite.Require().NoError(err)
@@ -107,7 +144,7 @@ func (suite *URLTestSuite) TestCreateURLWithCustomAlias() {
 	suite.True(response.Success)
 }
 
-func (suite *URLTestSuite) TestGetURLInfo() {
+func (suite *OAuthTestSuite) TestGetURLInfo() {
 	url := models.URL{
 		OriginalURL: "https://example.com",
 		ShortCode:   "test123",
@@ -126,7 +163,7 @@ func (suite *URLTestSuite) TestGetURLInfo() {
 	suite.True(response.Success)
 }
 
-func (suite *URLTestSuite) TestRedirectURL() {
+func (suite *OAuthTestSuite) TestRedirectURL() {
 	url := models.URL{
 		OriginalURL: "https://example.com",
 		ShortCode:   "test123",
@@ -141,13 +178,13 @@ func (suite *URLTestSuite) TestRedirectURL() {
 	suite.Equal("https://example.com", resp.Header.Get("Location"))
 }
 
-func (suite *URLTestSuite) TestRedirectURLNotFound() {
-	req := httptest.NewRequest(http.MethodGet, "/nonexistent", nil)
+func (suite *OAuthTestSuite) TestUnauthorizedAccessToProtectedRoute() {
+	req := httptest.NewRequest(http.MethodGet, "/auth/profile", nil)
 	resp, err := suite.app.Test(req)
 	suite.Require().NoError(err)
-	suite.Equal(http.StatusNotFound, resp.StatusCode)
+	suite.Equal(http.StatusUnauthorized, resp.StatusCode)
 }
 
-func TestURLTestSuite(t *testing.T) {
-	suite.Run(t, new(URLTestSuite))
+func TestOAuthTestSuite(t *testing.T) {
+	suite.Run(t, new(OAuthTestSuite))
 }

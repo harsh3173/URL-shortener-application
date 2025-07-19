@@ -31,7 +31,7 @@ A production-ready URL shortening service built with Go, React, PostgreSQL, and 
 - Responsive, mobile-first UI
 
 ### Security & Performance
-- JWT authentication with secure cookies
+- OAuth 2.0 authentication with Google
 - Input validation and sanitization
 - HTTPS enforcement
 - Database optimization with connection pooling
@@ -49,7 +49,7 @@ graph TB
     end
     
     subgraph "Backend (Go + Fiber)"
-        F[Fiber Web Server] --> G[JWT Middleware]
+        F[Fiber Web Server] --> G[OAuth Middleware]
         F --> H[Rate Limiting]
         F --> I[CORS]
         F --> J[API Handlers]
@@ -99,8 +99,8 @@ graph TB
 - **Fiber** - Express-inspired web framework
 - **GORM** - ORM for database operations
 - **PostgreSQL** - Relational database
-- **JWT** - JSON Web Token authentication
-- **bcrypt** - Password hashing
+- **OAuth 2.0** - Google OAuth authentication
+- **Sessions** - Secure HTTP-only cookie sessions
 - **Testify** - Testing framework
 
 ### DevOps & Cloud
@@ -260,24 +260,17 @@ chmod +x deployment/gcp/deploy.sh
 
 ### Authentication Endpoints
 
-#### POST /api/v1/auth/register
-Register a new user account.
+#### GET /api/v1/auth/login
+Initiate OAuth 2.0 login flow with Google.
 
+Returns:
 ```json
 {
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "securepassword"
-}
-```
-
-#### POST /api/v1/auth/login
-Authenticate and receive JWT token.
-
-```json
-{
-  "email": "john@example.com",
-  "password": "securepassword"
+  "success": true,
+  "data": {
+    "auth_url": "https://accounts.google.com/oauth2/auth?..."
+  },
+  "message": "OAuth login URL generated"
 }
 ```
 
@@ -323,7 +316,7 @@ Response includes:
 - Go programming with modern patterns and best practices
 - RESTful API design and implementation
 - Database design and optimization with PostgreSQL
-- Authentication and security (JWT, bcrypt)
+- Authentication and security (OAuth 2.0, sessions)
 - Middleware development and request handling
 - Comprehensive testing with unit and integration tests
 
@@ -346,7 +339,7 @@ Response includes:
 ### Key Achievements
 - Full-stack development with complete application from database to UI
 - Cloud-native architecture deployed on GCP with auto-scaling capabilities
-- Security-first approach with JWT authentication, input validation, and HTTPS
+- Security-first approach with OAuth 2.0 authentication, input validation, and HTTPS
 - Test-driven development with comprehensive test suite
 - Production-ready with monitoring, logging, and error handling
 - Scalable design with horizontal scaling and caching

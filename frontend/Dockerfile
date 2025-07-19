@@ -41,8 +41,8 @@ RUN chown -R 1001:1001 /usr/share/nginx/html && \
     chown -R 1001:1001 /var/log/nginx && \
     chown -R 1001:1001 /etc/nginx/conf.d && \
     chown -R 1001:1001 /tmp && \
-    mkdir -p /var/run && \
-    chown -R 1001:1001 /var/run && \
+    mkdir -p /var/run/nginx && \
+    chown -R 1001:1001 /var/run/nginx && \
     mkdir -p /tmp/nginx && \
     chown -R 1001:1001 /tmp/nginx
 

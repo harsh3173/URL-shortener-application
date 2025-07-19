@@ -25,7 +25,7 @@ const URLShortenerForm: React.FC<URLShortenerFormProps> = ({ onURLCreated }) => 
     setLoading(true);
     try {
       const response = await urlApi.createURL(data);
-      const shortURL = `${window.location.origin}/${response.data!.short_code}`;
+      const shortURL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/${response.data!.short_code}`;
       setShortenedURL(shortURL);
       onURLCreated?.(response.data!);
       toast.success('URL shortened successfully!');

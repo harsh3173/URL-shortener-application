@@ -5,9 +5,6 @@ import type {
   Analytics, 
   URLStats, 
   CreateURLRequest, 
-  LoginRequest, 
-  RegisterRequest, 
-  AuthResponse, 
   ApiResponse
 } from '@/types';
 

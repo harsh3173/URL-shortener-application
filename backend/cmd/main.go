@@ -73,6 +73,7 @@ func main() {
 	
 	app.Get("/:shortCode", urlHandler.RedirectURL)
 	
+	// For now, just start HTTP server to avoid certificate complexity in Docker
 	port := fmt.Sprintf(":%s", cfg.Port)
 	log.Printf("Server starting on port %s", cfg.Port)
 	log.Fatal(app.Listen(port))

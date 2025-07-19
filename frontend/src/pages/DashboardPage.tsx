@@ -58,7 +58,7 @@ const DashboardPage: React.FC = () => {
   };
 
   const handleCopyURL = async (shortCode: string) => {
-    const shortURL = `${window.location.origin}/${shortCode}`;
+    const shortURL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/${shortCode}`;
     try {
       await navigator.clipboard.writeText(shortURL);
       toast.success('URL copied to clipboard!');
@@ -212,7 +212,7 @@ const DashboardPage: React.FC = () => {
                           <div className="flex items-center space-x-2">
                             <span className="font-medium">Short URL:</span>
                             <code className="bg-gray-100 px-2 py-1 rounded text-primary-600">
-                              {window.location.origin}/{url.short_code}
+                              {import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/{url.short_code}
                             </code>
                           </div>
                           

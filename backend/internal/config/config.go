@@ -10,6 +10,9 @@ import (
 
 type Config struct {
 	Port                string
+	HTTPSPort           string
+	TLSCertFile         string
+	TLSKeyFile          string
 	DatabaseURL         string
 	GoogleClientID      string
 	GoogleClientSecret  string
@@ -35,12 +38,15 @@ func LoadConfig() *Config {
 
 	return &Config{
 		Port:                getEnv("PORT", "8080"),
+		HTTPSPort:           getEnv("HTTPS_PORT", "8443"),
+		TLSCertFile:         getEnv("TLS_CERT_FILE", "/app/certs/localhost.crt"),
+		TLSKeyFile:          getEnv("TLS_KEY_FILE", "/app/certs/localhost.key"),
 		DatabaseURL:         getEnv("DATABASE_URL", "postgres://user:password@localhost/urlshortener?sslmode=disable"),
 		GoogleClientID:      getEnv("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret:  getEnv("GOOGLE_CLIENT_SECRET", ""),
 		SessionSecret:       getEnv("SESSION_SECRET", "your-256-bit-session-secret"),
 		Environment:         getEnv("ENVIRONMENT", "development"),
-		FrontendURL:         getEnv("FRONTEND_URL", "http://localhost:3000"),
+		FrontendURL:         getEnv("FRONTEND_URL", "https://localhost:3000"),
 		RedisURL:            getEnv("REDIS_URL", "redis://localhost:6379"),
 		RateLimitRequests:   rateLimitRequests,
 		RateLimitWindow:     rateLimitWindow,
